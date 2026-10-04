@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Whisperで音声を文字に。音声ファイルをブラウザー内で文字起こしし、編集・コピー・テキスト保存できるツール。">
+<title>mozi · 音声文字起こし</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='12' fill='%23285e4c'/%3E%3Cpath d='M10 17v6m6-12v18m8-22v26m6-17v8' stroke='%23fff' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="./style.css">
+<script type="module" src="./app.js"></script>
+</head>
+<body>
+<header class="topbar"><a class="brand" href="./" aria-label="mozi ホーム"><span class="brand-icon"><i></i><i></i><i></i><i></i></span>mozi<span class="brand-dot">.</span></a><span class="top-description">音声文字起こし</span><span class="local-badge"><span></span>ブラウザー内で処理</span></header>
+<main>
+<div class="intro"><div><p class="eyebrow">AUDIO TO WORDS</p><h1>声を、文字に。</h1><p class="lead">録音した会話も、ひらめきも。Whisperで文字に残そう。</p></div><div class="intro-art" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
+<div class="workspace">
+<section class="input-panel" aria-labelledby="input-title"><div class="section-title"><span class="step">01</span><h2 id="input-title">音声を選ぶ</h2></div>
+<input id="file-input" type="file" accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac,.webm,.mp4" hidden>
+<button type="button" class="dropzone" id="dropzone"><span class="upload-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 16V4m-4 4 4-4 4 4M4 16v4h16v-4"/></svg></span><strong>音声ファイルをドロップ</strong><span>またはクリックしてファイルを選択</span><small>MP3 / WAV / M4A など · 最大50 MB・20分</small></button>
+<div id="file-card" class="file-card" hidden><div class="file-heading"><span class="file-icon" aria-hidden="true">♫</span><div class="file-info"><strong id="file-name"></strong><span id="file-meta"></span></div><button class="icon-button" id="remove-file" aria-label="選択したファイルを取り除く">×</button></div><audio id="player" controls preload="metadata" aria-label="選択した音声の再生"></audio></div>
+<div class="settings"><label for="language">音声の言語</label><select id="language"><option value="japanese">日本語</option><option value="auto">自動検出</option><option value="english">英語</option><option value="chinese">中国語</option><option value="korean">韓国語</option><option value="french">フランス語</option><option value="german">ドイツ語</option><option value="spanish">スペイン語</option></select><p class="field-note">言語を指定すると認識精度が向上します。</p></div>
+<div class="action-row"><button id="cancel" class="secondary" hidden>キャンセル</button><button id="start" class="primary" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m13 2-9 12h7l-1 8 10-13h-7z"/></svg><span>文字起こしを開始</span><span aria-hidden="true">→</span></button></div>
+<div id="processing" class="processing" hidden><div><span class="spinner" aria-hidden="true"></span><strong id="process-label">準備しています…</strong></div><progress id="progress" aria-label="処理状況"></progress><p id="process-detail"></p></div>
+<p class="model-note">Whisper Tiny · 初回は認識モデルをダウンロードします。<br>短い録音でのお試しがおすすめです。</p>
+<div class="privacy"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6zM8 12l3 3 5-6"/></svg><div><strong>あなたの音声は、あなたの端末に。</strong><p>音声と結果は外部へ送信・保存しません。<br>モデルの取得にはインターネット接続が必要です。</p></div></div>
+</section>
+<section class="result-panel" aria-labelledby="result-title"><div class="result-header"><div class="section-title"><span class="step">02</span><h2 id="result-title">文字起こし結果</h2></div><span id="result-status" class="result-status">待機中</span></div>
+<div class="result-toolbar"><span id="result-filename">TRANSCRIPT</span><div><button id="copy" class="tool-button" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg>コピー</button><button id="download" class="tool-button" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 17v4h16v-4"/></svg>TXT保存</button></div></div>
+<div id="empty-result" class="empty-result"><div class="document-art" aria-hidden="true"><span class="doc-line"></span><span class="doc-line"></span><span class="doc-line"></span><span class="doc-wave">∿</span></div><h3>ここに、あなたの言葉が並びます。</h3><p>音声ファイルを選んで、文字起こしを始めましょう。<br>結果はそのまま編集して、コピー・保存できます。</p></div>
+<textarea id="transcript" aria-label="文字起こし結果（編集できます）" placeholder="認識された文章が表示されます" hidden spellcheck="false"></textarea>
+<div class="result-bottom"><span id="character-count">0 文字</span><span><span class="keyboard-hint">✎</span> 結果は直接編集できます</span></div></section>
+</div>
+<div id="notice" role="status" aria-live="polite" hidden></div>
+<div class="footnotes"><p><span>i</span> 認識結果には誤りが含まれることがあります。固有名詞や重要な内容は、音声と照らし合わせてご確認ください。</p><span class="powered">POWERED BY <strong>Whisper</strong></span></div>
+</main><footer><span class="footer-brand">mozi.</span><span>声の先に、言葉を。</span><span>LOCAL FIRST · NO API KEY</span></footer>
+</body></html>
