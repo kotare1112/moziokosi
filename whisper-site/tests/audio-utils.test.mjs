@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { validateFile, validateDuration, mixToMono, downloadName, MAX_BYTES, MAX_SECONDS } from '../dist/audio-utils.mjs';
+import { validateFile, validateDuration, mixToMono, downloadName, resolveModel, MAX_BYTES, MAX_SECONDS } from '../dist/audio-utils.mjs';
 test('reject empty, oversized, and unsupported files before decoding', () => {
   assert.ok(validateFile({ name:'empty.wav',size:0 }));
   assert.ok(validateFile({ name:'large.wav',size:MAX_BYTES + 1 }));
@@ -17,4 +17,15 @@ test('mix stereo channels equally, including opposite-phase samples', () => {
 });
 test('safe export filenames retain Japanese text', () => {
   assert.equal(downloadName('会議/録音:10.mp3'),'会議_録音_10.txt');
+});
+test('resolve model id, device, dtype, and English-only variants', () => {
+  assert.deepEqual(resolveModel('small','japanese',false),{ id:'onnx-community/whisper-small',device:'wasm',dtype:{ encoder_model:'fp32',decoder_model_merged:'q8' },englishOnly:false });
+  assert.deepEqual(resolveModel('base','english',true),{ id:'onnx-community/whisper-base.en',device:'webgpu',dtype:{ encoder_model:'fp32',decoder_model_merged:'q4' },englishOnly:true });
+  assert.equal(resolveModel('small','english',false).id,'onnx-community/whisper-small.en');
+  assert.deepEqual(resolveModel('turbo','english',true),{ id:'onnx-community/whisper-large-v3-turbo',device:'webgpu',dtype:{ encoder_model:'fp16',decoder_model_merged:'q4' },englishOnly:false });
+});
+test('turbo needs WebGPU and unknown models are rejected', () => {
+  assert.throws(() => resolveModel('turbo','japanese',false),/WebGPU/);
+  assert.throws(() => resolveModel('tiny','japanese',true));
+  assert.throws(() => resolveModel('__proto__','japanese',true));
 });

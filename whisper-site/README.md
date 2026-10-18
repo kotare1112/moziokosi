@@ -1,6 +1,6 @@
 # mozi · Whisper 音声文字起こし
 
-Whisper Tiny（多言語・q8）を Transformers.js 3.8.1 と WebAssembly でブラウザー内実行するサイトです。APIキー、PythonのWhisper、サーバーの音声処理は不要です。
+Whisper（Base / Small / Large v3 Turbo を選択、既定は Small）を Transformers.js 3.8.1 でブラウザー内実行するサイトです。WebGPU 対応ブラウザーでは WebGPU、非対応または失敗時は WebAssembly（WASM）で動作します。APIキー、PythonのWhisper、サーバーの音声処理は不要です。
 
 ## 起動手順
 
@@ -16,12 +16,13 @@ Whisper Tiny（多言語・q8）を Transformers.js 3.8.1 と WebAssembly でブ
 ## 仕組み・制約
 
 - オーディオをデコードし、チャンネルを平均して16 kHzのモノラルへリサンプリング。
-- 専用Web Workerで30秒チャンク・5秒ストライドによる認識。UIをブロックしません。
+- 専用Web Workerで30秒チャンク・5秒ストライドによる認識。タイムスタンプを有効にしてチャンク境界の結合精度を高め、取りこぼしを減らします。
+- モデル: Base / Small は多言語版、言語が英語のときは英語専用の `.en` 版を自動選択。Large v3 Turbo は WebGPU 必須（WASM では選択不可）。エンコーダーは fp32（Turbo のWebGPUは fp16）、デコーダーは WASM が q8、WebGPU が q4。UIをブロックしません。
 - キャンセル時はWorkerを終了。終了したジョブの結果は適用しません。
 - ファイル名、音声、認識結果をログやサーバーへ送信しません。結果はtextContent/textareaで扱い、HTMLとして解釈しません。
 - jsDelivrからライブラリー・ランタイム、Hugging Faceからモデルを取得します。モデルのダウンロードはブラウザーキャッシュを利用します。音声・結果の履歴保存はありません。
-- Tinyは軽量モデルのため、雑音、日本語や固有名詞の認識には誤りが出ることがあります。端末によって長い音声の処理には時間・メモリーを要します。
+- Base は軽量なため、雑音、日本語や固有名詞の認識には誤りが出ることがあります。端末によって長い音声の処理には時間・メモリーを要します。
 - `npm test` でファイル検証、時間上限、ステレオ変換、保存名の単体テストを実行します。
 
 参考: https://huggingface.co/docs/transformers.js/pipelines
-モデル: https://huggingface.co/onnx-community/whisper-tiny
+モデル: https://huggingface.co/onnx-community/whisper-small

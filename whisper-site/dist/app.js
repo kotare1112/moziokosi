@@ -3,6 +3,7 @@ const $ = id => document.getElementById(id);
 let file = null, worker = null, objectUrl = null, busy = false, job = 0, selection = 0;
 const downloads = new Map();
 const languages = new Set(['auto','japanese','english','chinese','korean','french','german','spanish']);
+const models = new Set(['base','small','turbo']);
 function notify(message, error = false) {
   $('notice').hidden = false;
   $('notice').classList.toggle('error', error);
@@ -13,7 +14,7 @@ function setBusy(value) {
   busy = value;
   $('start').disabled = value || !file;
   $('start').querySelector('span').textContent = value ? '文字起こし中…' : '文字起こしを開始';
-  for (const id of ['dropzone','remove-file','language','file-input']) $(id).disabled = value;
+  for (const id of ['dropzone','remove-file','language','model','file-input']) $(id).disabled = value;
   $('cancel').hidden = !value;
   $('processing').hidden = !value;
   $('result-status').textContent = value ? '処理中' : $('transcript').value ? '完了' : '待機中';
@@ -103,12 +104,13 @@ async function startTranscription() {
     const audio = await decodeAudio(selectedFile);
     if (currentJob !== job) return { status: 'cancelled' };
     $('player').pause();
+    if (!models.has($('model').value) || !languages.has($('language').value)) throw new Error('認識モデルまたは言語の設定が正しくありません。ページを再読み込みしてください。');
     if (!worker) worker = new Worker('./whisper-worker.js', { type: 'module' });
     worker.onmessage = ({ data }) => {
       if (currentJob !== job) return;
       if (data.type === 'loading') {
         $('process-label').textContent = '認識モデルを準備しています…';
-        $('process-detail').textContent = '初回のダウンロードには数分かかる場合があります。モデルはブラウザーにキャッシュされます。';
+        $('process-detail').textContent = '初回のダウンロードには数分かかる場合があります。モデルはブラウザーにキャッシュされます。' + (data.device ? `（${data.device === 'webgpu' ? 'WebGPU' : 'WASM'}で実行）` : '');
       } else if (data.type === 'download') {
         downloads.set(data.file, { loaded: data.loaded || 0, total: data.total || 0 });
         const values = [...downloads.values()];
@@ -133,7 +135,7 @@ async function startTranscription() {
       worker?.terminate(); worker = null; setBusy(false);
       notify('文字起こしを開始できませんでした。接続とブラウザーの設定を確認し、最新版のChromeまたはEdgeでお試しください。', true);
     };
-    worker.postMessage({ type: 'transcribe', audio, language: $('language').value }, [audio.buffer]);
+    worker.postMessage({ type: 'transcribe', audio, language: $('language').value, model: $('model').value }, [audio.buffer]);
     return { status: 'started' };
   } catch (error) {
     if (currentJob !== job) return { status: 'cancelled' };

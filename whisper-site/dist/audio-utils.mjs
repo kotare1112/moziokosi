@@ -22,3 +22,12 @@ export function formatDuration(seconds) {
 export function downloadName(filename) {
   return filename.replace(/\.[^.]+$/, '').replace(/[<>:"/\\|?*\x00-\x1f]/g, '_').slice(0, 150) + '.txt';
 }
+const MODELS = { base: 'onnx-community/whisper-base', small: 'onnx-community/whisper-small', turbo: 'onnx-community/whisper-large-v3-turbo' };
+export const TURBO_NEEDS_WEBGPU = '最高精度モデルはWebGPU対応ブラウザー（最新のChrome/Edge）が必要です。高精度モデルを選んでください。';
+export function resolveModel(model, language, hasWebGPU) {
+  if (!Object.hasOwn(MODELS, model)) throw new Error('Unknown model');
+  if (model === 'turbo' && !hasWebGPU) throw new Error(TURBO_NEEDS_WEBGPU);
+  const englishOnly = language === 'english' && model !== 'turbo';
+  const decoder_model_merged = hasWebGPU ? 'q4' : 'q8';
+  return { id: MODELS[model] + (englishOnly ? '.en' : ''), device: hasWebGPU ? 'webgpu' : 'wasm', dtype: { encoder_model: hasWebGPU && model === 'turbo' ? 'fp16' : 'fp32', decoder_model_merged }, englishOnly };
+}
