@@ -3,7 +3,7 @@ const $ = id => document.getElementById(id);
 let file = null, worker = null, objectUrl = null, busy = false, job = 0, selection = 0;
 const downloads = new Map();
 const languages = new Set(['auto','japanese','english','chinese','korean','french','german','spanish']);
-const models = new Set(['base','small','turbo']);
+const models = new Set(['base','small','turbo','lang']);
 function notify(message, error = false) {
   $('notice').hidden = false;
   $('notice').classList.toggle('error', error);

@@ -23,11 +23,22 @@ export function downloadName(filename) {
   return filename.replace(/\.[^.]+$/, '').replace(/[<>:"/\\|?*\x00-\x1f]/g, '_').slice(0, 150) + '.txt';
 }
 const MODELS = { base: 'onnx-community/whisper-base', small: 'onnx-community/whisper-small', turbo: 'onnx-community/whisper-large-v3-turbo' };
-export const TURBO_NEEDS_WEBGPU = '最高精度モデルはWebGPU対応ブラウザー（最新のChrome/Edge）が必要です。高精度モデルを選んでください。';
+const LANG_MODELS = {
+  japanese: { id: 'onnx-community/kotoba-whisper-v2.2-ONNX', revision: 'main' },
+  chinese: { id: 'subtitleking/belle-whisper-large-v3-turbo-zh-onnx', revision: 'b5233598ee23522e477a67d168ee60e2f3068d38' },
+  korean: { id: 'JaeyeongYang/whisper-large-v3-turbo-korean-onnx', revision: '0544cc0ef462c6feaad6131a8dba634a3a6e1a37' },
+  german: { id: 'flackzz/whisper-large-v3-turbo-german-ONNX', revision: '33cc57e9f096f55e198a41db98844d1d341a58de' },
+};
+export const NEEDS_WEBGPU = 'このモデルはWebGPU対応ブラウザー（最新のChrome/Edge）が必要です。高精度モデルを選んでください。';
 export function resolveModel(model, language, hasWebGPU) {
+  if (model === 'lang') {
+    if (!hasWebGPU) throw new Error(NEEDS_WEBGPU);
+    const { id, revision } = Object.hasOwn(LANG_MODELS, language) ? LANG_MODELS[language] : { id: MODELS.turbo, revision: 'main' };
+    return { id, revision, device: 'webgpu', dtype: { encoder_model: 'fp16', decoder_model_merged: 'q4' }, englishOnly: false };
+  }
   if (!Object.hasOwn(MODELS, model)) throw new Error('Unknown model');
-  if (model === 'turbo' && !hasWebGPU) throw new Error(TURBO_NEEDS_WEBGPU);
+  if (model === 'turbo' && !hasWebGPU) throw new Error(NEEDS_WEBGPU);
   const englishOnly = language === 'english' && model !== 'turbo';
   const decoder_model_merged = hasWebGPU ? 'q4' : 'q8';
-  return { id: MODELS[model] + (englishOnly ? '.en' : ''), device: hasWebGPU ? 'webgpu' : 'wasm', dtype: { encoder_model: hasWebGPU && model === 'turbo' ? 'fp16' : 'fp32', decoder_model_merged }, englishOnly };
+  return { id: MODELS[model] + (englishOnly ? '.en' : ''), revision: 'main', device: hasWebGPU ? 'webgpu' : 'wasm', dtype: { encoder_model: hasWebGPU && model === 'turbo' ? 'fp16' : 'fp32', decoder_model_merged }, englishOnly };
 }
